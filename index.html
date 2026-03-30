@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ජ්‍යොතිෂ පරීක්ෂක - ලග්නය සහ නැකත</title>
+    <title>ජ්‍යොතිෂ තොරතුරු පද්ධතිය</title>
     <style>
-        :root { --primary-color: #6200ea; --secondary-color: #03dac6; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        :root { --primary-color: #6200ea; --bg-color: #f4f7f6; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
-        h2 { color: var(--primary-color); margin-bottom: 20px; }
+        h2 { color: var(--primary-color); margin-bottom: 25px; font-size: 28px; }
         .input-group { text-align: left; margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--primary-color); }
-        button { width: 100%; padding: 15px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        button:hover { background: #4500b5; }
-        #result-box { margin-top: 25px; padding: 20px; border-radius: 10px; display: none; line-height: 1.8; animation: fadeIn 0.5s ease-in; }
+        input:focus { border-color: var(--primary-color); box-shadow: 0 0 5px rgba(98, 0, 234, 0.2); }
+        button { width: 100%; padding: 15px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 15px; }
+        button:hover { background: #4500b5; transform: translateY(-1px); }
+        #result-box { margin-top: 25px; padding: 20px; border-radius: 12px; display: none; line-height: 1.8; animation: fadeIn 0.5s ease-in; }
         .success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
         .error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-        .info { font-size: 19px; font-weight: bold; margin-bottom: 5px; }
-        .debug-info { font-size: 12px; color: #666; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 5px; }
+        .info { font-size: 20px; font-weight: bold; }
+        .debug-text { font-size: 11px; color: #777; margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -61,27 +61,21 @@
 
 <script>
     async function calculateAstrology() {
-        const birthDateInput = document.getElementById('birthDate').value; 
-        const birthTimeInput = document.getElementById('birthTime').value;
+        const birthDateVal = document.getElementById('birthDate').value; 
+        const birthTimeVal = document.getElementById('birthTime').value;
         const cityData = document.getElementById('citySelect').value.split(',');
         
-        const resultBox = document.getElementById('result-box');
-
-        if (!birthDateInput || !birthTimeInput) {
+        if (!birthDateVal || !birthTimeVal) {
             showResponse("කරුණාකර දිනය සහ වේලාව ඇතුළත් කරන්න.", "error");
             return;
         }
 
-        // HTML Date Input (YYYY-MM-DD) එකෙන් අගයන් වෙන් කර ගැනීම
-        const dateParts = birthDateInput.split('-');
-        const year = dateParts[0];
-        const month = dateParts[1];
-        const day = dateParts[2];
-
-        // Time Input (HH:MM) එකෙන් අගයන් වෙන් කර ගැනීම
-        const timeParts = birthTimeInput.split(':');
-        const hour = timeParts[0];
-        const min = timeParts[1];
+        // දිනය වෙන් කර ගැනීම (YYYY-MM-DD)
+        const [year, month, day] = birthDateVal.split('-');
+        
+        // වේලාව වෙන් කර ගැනීම (HH:mm)
+        // HTML Time input එක සෑමවිටම 24-hour format (HH:mm) එකෙන් අගය ලබා දෙයි
+        const [hour, min] = birthTimeVal.split(':');
 
         const lat = cityData[0];
         const lon = cityData[1];
@@ -99,14 +93,17 @@
                 const output = `
                     <div class="info">ඔබේ ලග්නය: <span style="color:#6200ea">${data.lagnaya}</span></div>
                     <div class="info">ඔබේ නැකත: <span style="color:#6200ea">${data.nakshata}</span></div>
-                    <div class="debug-info">ගණනය කළ UTC දිනය: ${data.debug.utc_date}</div>
+                    <div class="debug-text">
+                        ඇතුළත් කළ වේලාව: ${hour}:${min} (පැය 24 ක්‍රමයට)<br>
+                        ගණනය කළ UTC දිනය: ${data.debug.utc_date}
+                    </div>
                 `;
                 showResponse(output, "success");
             } else {
                 showResponse("දෝෂයකි: " + data.error, "error");
             }
         } catch (error) {
-            showResponse("සම්බන්ධතාවය බිඳ වැටුණි. කරුණාකර නැවත උත්සාහ කරන්න.", "error");
+            showResponse("සර්වර් එක සම්බන්ධ කරගත නොහැක. නැවත උත්සාහ කරන්න.", "error");
         }
     }
 
