@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ජ්‍යොතිෂ පරීක්ෂක</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background 0.3s; }
+        button:hover { background-color: #2980b9; }
+        #result { margin-top: 20px; padding: 15px; border-radius: 5px; display: none; font-weight: bold; font-size: 18px; color: #27ae60; background-color: #eafaf1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>ලග්නය පරීක්ෂා කරන්න</h2>
+    <input type="date" id="birthDate">
+    <input type="time" id="birthTime">
+    <input type="text" id="lat" placeholder="අක්ෂාංශ (Latitude)" value="7.25">
+    <input type="text" id="lon" placeholder="දේශාංශ (Longitude)" value="80.34">
+    
+    <button onclick="checkLagnaya()">ලග්නය සොයන්න</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    async function checkLagnaya() {
+        const birthDate = document.getElementById('birthDate').value;
+        const birthTime = document.getElementById('birthTime').value;
+        const lat = document.getElementById('lat').value;
+        const lon = document.getElementById('lon').value;
+
+        if (!birthDate || !birthTime) {
+            alert("කරුණාකර දිනය සහ වේලාව ඇතුළත් කරන්න.");
+            return;
+        }
+
+        const dateObj = new Date(birthDate);
+        const year = dateObj.getFullYear();
+        const month = dateObj.getMonth() + 1;
+        const day = dateObj.getDate();
+
+        const [hour, min] = birthTime.split(':');
+
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block';
+        resultDiv.innerText = 'ගණනය කරමින් පවතී...';
+
+        // මෙහි ඔබේ PythonAnywhere URL එක ඇතුළත් කරන්න
+        const apiUrl = `https://bandarakasu.pythonanywhere.com/calculate?year=${year}&month=${month}&day=${day}&hour=${hour}&min=${min}&lat=${lat}&lon=${lon}`;
+
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                resultDiv.innerText = `ඔබේ ලග්නය: ${data.lagnaya}`;
+            } else {
+                resultDiv.innerText = 'දෝෂයක් සිදුවිය!';
+            }
+        } catch (error) {
+            console.error(error);
+            resultDiv.innerText = 'සම්බන්ධතාවය බිඳ වැටුණි!';
+        }
+    }
+</script>
+
+</body>
+</html>
