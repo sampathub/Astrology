@@ -37,4 +37,5 @@ def calculate():
         return jsonify({"error": str(e), "status": "failed"})
 
 # Vercel සඳහා අවශ්‍ය වන කොටස
-app = app
+if __name__ == "__main__":
+    app.run()
