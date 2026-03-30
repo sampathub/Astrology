@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import swisseph as swe
-from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app)
@@ -25,36 +24,53 @@ def calculate():
         lat = float(request.args.get('lat'))
         lon = float(request.args.get('lon'))
 
-        # --- නිවැරදි UTC ගණනය කිරීම ---
-        # ලංකාවේ වේලාවෙන් පැය 5 මිනිත්තු 30 ක් අඩු කිරීම
-        local_dt = datetime(y, m, d, h, mi)
-        utc_dt = local_dt - timedelta(hours=5, minutes=30)
+        # --- Manual UTC Correction ---
+        # ලංකාවේ වේලාවෙන් 5:30 ක් අඩු කිරීම
+        decimal_hour = h + (mi / 60.0)
+        utc_hour = decimal_hour - 5.5
         
-        # UTC දිනය සහ වේලාව ලබා ගැනීම
-        jd_ut = swe.julday(utc_dt.year, utc_dt.month, utc_dt.day, 
-                           utc_dt.hour + utc_dt.minute/60.0 + utc_dt.second/3600.0)
+        target_year, target_month, target_day = y, m, d
         
+        # වේලාව සෘණ වුවහොත් පෙර දිනයට යාම
+        if utc_hour < 0:
+            utc_hour += 24
+            d -= 1
+            if d < 1: # මාසය මාරු වන අවස්ථාවකදී (උදා: අප්‍රේල් 1 සිට මාර්තු 31 ට)
+                m -= 1
+                if m < 1:
+                    y -= 1
+                    m = 12
+                # මාසයේ දින ගණන තීරණය කිරීම (සරලව)
+                if m in [4, 6, 9, 11]: d = 30
+                elif m == 2: d = 29 if (y % 4 == 0) else 28
+                else: d = 31
+            target_year, target_month, target_day = y, m, d
+
+        # Julian Day ගණනය කිරීම
+        jd_ut = swe.julday(target_year, target_month, target_day, utc_hour)
+        
+        # ලාහිරි අයනංශය (Lahiri Ayanamsa)
         swe.set_sid_mode(swe.SIDM_LAHIRI)
         
-        # 1. ලග්නය ගණනය කිරීම
-        # 64 = FLG_SIDEREAL
+        # 1. ලග්නය (Ascendant) - 64 = FLG_SIDEREAL
+        # 'O' = Porphyrius, ලංකාවේ ජ්‍යොතිෂයට වඩාත් ගැලපේ
         res, ascmc = swe.houses_ex(jd_ut, lat, lon, b'O', 64)
         zodiac_signs = ["Mesha", "Vrushaba", "Mithuna", "Kataka", "Sinha", "Kanya", 
                         "Thula", "Vrushchika", "Dhanu", "Makara", "Kumbha", "Meena"]
         
-        # ධනු රාශිය (Dhanu) අංශක 240 සිට 270 දක්වා වේ.
-        lagnaya = zodiac_signs[int(ascmc[0] / 30)]
+        ascendant_deg = ascmc[0]
+        lagnaya = zodiac_signs[int(ascendant_deg / 30)]
 
-        # 2. නැකත ගණනය කිරීම
+        # 2. නැකත (Moon)
         moon_pos, retire = swe.calc_ut(jd_ut, 1, 64)
-        moon_degree = moon_pos[0]
-        
-        nakshatra_index = int(moon_degree / (360 / 27))
-        nakshata = NAKSHATRAS[nakshatra_index % 27]
+        moon_deg = moon_pos[0]
+        nakshatra_idx = int(moon_deg / (360 / 27))
+        nakshata = NAKSHATRAS[nakshatra_idx % 27]
         
         return jsonify({
             "lagnaya": lagnaya,
             "nakshata": nakshata,
+            "debug": {"utc_date": f"{target_year}-{target_month}-{target_day}", "utc_hour": utc_hour},
             "status": "success"
         })
     except Exception as e:
