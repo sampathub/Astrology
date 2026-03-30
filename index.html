@@ -3,25 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ජ්‍යොතිෂ පරීක්ෂක</title>
+    <title>ජ්‍යොතිෂ පරීක්ෂක - ලග්නය සොයන්න</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
-        h2 { color: #2c3e50; margin-bottom: 20px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background 0.3s; }
-        button:hover { background-color: #2980b9; }
-        #result { margin-top: 20px; padding: 15px; border-radius: 5px; display: none; font-weight: bold; font-size: 18px; color: #27ae60; background-color: #eafaf1; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: #1a73e8; margin-bottom: 25px; font-size: 24px; }
+        .input-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #444; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; transition: border-color 0.3s; }
+        input:focus, select:focus { border-color: #1a73e8; }
+        button { width: 100%; padding: 15px; background-color: #1a73e8; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 20px; transition: background 0.3s; }
+        button:hover { background-color: #1557b0; }
+        #result { margin-top: 25px; padding: 20px; border-radius: 10px; display: none; font-size: 20px; animation: fadeIn 0.5s; }
+        .success { background-color: #e6f4ea; color: #1e8e3e; border: 1px solid #1e8e3e; }
+        .error { background-color: #fce8e6; color: #d93025; border: 1px solid #d93025; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>ලග්නය පරීක්ෂා කරන්න</h2>
-    <input type="date" id="birthDate">
-    <input type="time" id="birthTime">
-    <input type="text" id="lat" placeholder="අක්ෂාංශ (Latitude)" value="7.25">
-    <input type="text" id="lon" placeholder="දේශාංශ (Longitude)" value="80.34">
+    
+    <div class="input-group">
+        <label>උපන් දිනය:</label>
+        <input type="date" id="birthDate">
+    </div>
+
+    <div class="input-group">
+        <label>උපන් වේලාව:</label>
+        <input type="time" id="birthTime">
+    </div>
+
+    <div class="input-group">
+        <label>උපන් නගරය:</label>
+        <select id="citySelect">
+            <option value="7.25,80.34">කෑගල්ල</option>
+            <option value="6.92,79.86">කොළඹ</option>
+            <option value="7.29,80.63">මහනුවර</option>
+            <option value="6.05,80.21">ගාල්ල</option>
+            <option value="8.31,80.41">අනුරාධපුරය</option>
+            <option value="9.66,80.01">යාපනය</option>
+            <option value="6.68,80.39">රත්නපුරය</option>
+            <option value="7.48,80.36">කුරුණෑගල</option>
+            <option value="6.98,81.05">බදුල්ල</option>
+            <option value="7.71,81.70">මඩකලපුව</option>
+        </select>
+    </div>
     
     <button onclick="checkLagnaya()">ලග්නය සොයන්න</button>
 
@@ -32,11 +60,12 @@
     async function checkLagnaya() {
         const birthDate = document.getElementById('birthDate').value;
         const birthTime = document.getElementById('birthTime').value;
-        const lat = document.getElementById('lat').value;
-        const lon = document.getElementById('lon').value;
+        const cityData = document.getElementById('citySelect').value.split(',');
+        const lat = cityData[0];
+        const lon = cityData[1];
 
         if (!birthDate || !birthTime) {
-            alert("කරුණාකර දිනය සහ වේලාව ඇතුළත් කරන්න.");
+            showResult("කරුණාකර දිනය සහ වේලාව ඇතුළත් කරන්න.", "error");
             return;
         }
 
@@ -44,29 +73,36 @@
         const year = dateObj.getFullYear();
         const month = dateObj.getMonth() + 1;
         const day = dateObj.getDate();
-
         const [hour, min] = birthTime.split(':');
 
         const resultDiv = document.getElementById('result');
-        resultDiv.style.display = 'block';
-        resultDiv.innerText = 'ගණනය කරමින් පවතී...';
+        showResult("ගණනය කරමින් පවතී...", "success");
 
-        // මෙහි ඔබේ PythonAnywhere URL එක ඇතුළත් කරන්න
-        const apiUrl = `https://bandarakasu.pythonanywhere.com/calculate?year=${year}&month=${month}&day=${day}&hour=${hour}&min=${min}&lat=${lat}&lon=${lon}`;
+        // Vercel එකේදී relative path එක භාවිතා කිරීම CORS ගැටළු වළක්වයි
+        const apiUrl = `/calculate?year=${year}&month=${month}&day=${day}&hour=${hour}&min=${min}&lat=${lat}&lon=${lon}`;
 
         try {
             const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('සර්වර් එකේ දෝෂයක්!');
+            
             const data = await response.json();
 
             if (data.status === 'success') {
-                resultDiv.innerText = `ඔබේ ලග්නය: ${data.lagnaya}`;
+                showResult(`ඔබේ ලග්නය: ${data.lagnaya}`, "success");
             } else {
-                resultDiv.innerText = 'දෝෂයක් සිදුවිය!';
+                showResult("ගණනය කිරීමේ දෝෂයක්: " + data.error, "error");
             }
         } catch (error) {
             console.error(error);
-            resultDiv.innerText = 'සම්බන්ධතාවය බිඳ වැටුණි!';
+            showResult("සම්බන්ධතාවය බිඳ වැටුණි! (Backend Error)", "error");
         }
+    }
+
+    function showResult(message, type) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block';
+        resultDiv.innerText = message;
+        resultDiv.className = type;
     }
 </script>
 
