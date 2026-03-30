@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ජ්‍යොතිෂ පරීක්ෂක - ලග්නය සොයන්න</title>
+    <title>ජ්‍යොතිෂ පරීක්ෂක - ලග්නය සහ නැකත</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        h2 { color: #1a73e8; margin-bottom: 25px; font-size: 24px; }
+        :root { --primary-color: #6200ea; --secondary-color: #03dac6; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
+        h2 { color: var(--primary-color); margin-bottom: 20px; }
         .input-group { text-align: left; margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #444; }
-        input, select { width: 100%; padding: 12px; border: 2px solid #e1e4e8; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; transition: border-color 0.3s; }
-        input:focus, select:focus { border-color: #1a73e8; }
-        button { width: 100%; padding: 15px; background-color: #1a73e8; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 20px; transition: background 0.3s; }
-        button:hover { background-color: #1557b0; }
-        #result { margin-top: 25px; padding: 20px; border-radius: 10px; display: none; font-size: 20px; animation: fadeIn 0.5s; }
-        .success { background-color: #e6f4ea; color: #1e8e3e; border: 1px solid #1e8e3e; }
-        .error { background-color: #fce8e6; color: #d93025; border: 1px solid #d93025; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #4500b5; }
+        #result-box { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; line-height: 1.6; }
+        .success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .info { font-size: 18px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>ලග්නය පරීක්ෂා කරන්න</h2>
+    <h2>ජ්‍යොතිෂ තොරතුරු</h2>
     
     <div class="input-group">
         <label>උපන් දිනය:</label>
@@ -51,13 +51,13 @@
         </select>
     </div>
     
-    <button onclick="checkLagnaya()">ලග්නය සොයන්න</button>
+    <button onclick="calculateAstrology()">පරීක්ෂා කරන්න</button>
 
-    <div id="result"></div>
+    <div id="result-box"></div>
 </div>
 
 <script>
-    async function checkLagnaya() {
+    async function calculateAstrology() {
         const birthDate = document.getElementById('birthDate').value;
         const birthTime = document.getElementById('birthTime').value;
         const cityData = document.getElementById('citySelect').value.split(',');
@@ -65,44 +65,46 @@
         const lon = cityData[1];
 
         if (!birthDate || !birthTime) {
-            showResult("කරුණාකර දිනය සහ වේලාව ඇතුළත් කරන්න.", "error");
+            showResponse("කරුණාකර දිනය සහ වේලාව ඇතුළත් කරන්න.", "error");
             return;
         }
 
-        const dateObj = new Date(birthDate);
-        const year = dateObj.getFullYear();
-        const month = dateObj.getMonth() + 1;
-        const day = dateObj.getDate();
-        const [hour, min] = birthTime.split(':');
+        const dateParts = birthDate.split('-');
+        const timeParts = birthTime.split(':');
+        
+        const year = dateParts[0];
+        const month = dateParts[1];
+        const day = dateParts[2];
+        const hour = timeParts[0];
+        const min = timeParts[1];
 
-        const resultDiv = document.getElementById('result');
-        showResult("ගණනය කරමින් පවතී...", "success");
+        showResponse("ගණනය කරමින් පවතී...", "success");
 
-        // Vercel එකේදී relative path එක භාවිතා කිරීම CORS ගැටළු වළක්වයි
         const apiUrl = `/calculate?year=${year}&month=${month}&day=${day}&hour=${hour}&min=${min}&lat=${lat}&lon=${lon}`;
 
         try {
             const response = await fetch(apiUrl);
-            if (!response.ok) throw new Error('සර්වර් එකේ දෝෂයක්!');
-            
             const data = await response.json();
 
             if (data.status === 'success') {
-                showResult(`ඔබේ ලග්නය: ${data.lagnaya}`, "success");
+                const output = `
+                    <div class="info">ඔබේ ලග්නය: <b>${data.lagnaya}</b></div>
+                    <div class="info">ඔබේ නැකත: <b>${data.nakshata}</b></div>
+                `;
+                showResponse(output, "success");
             } else {
-                showResult("ගණනය කිරීමේ දෝෂයක්: " + data.error, "error");
+                showResponse("දෝෂයකි: " + data.error, "error");
             }
         } catch (error) {
-            console.error(error);
-            showResult("සම්බන්ධතාවය බිඳ වැටුණි! (Backend Error)", "error");
+            showResponse("සර්වර් එක සමඟ සම්බන්ධ විය නොහැක.", "error");
         }
     }
 
-    function showResult(message, type) {
-        const resultDiv = document.getElementById('result');
-        resultDiv.style.display = 'block';
-        resultDiv.innerText = message;
-        resultDiv.className = type;
+    function showResponse(msg, type) {
+        const box = document.getElementById('result-box');
+        box.style.display = 'block';
+        box.innerHTML = msg;
+        box.className = type;
     }
 </script>
 
