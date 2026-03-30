@@ -5,6 +5,15 @@ import swisseph as swe
 app = Flask(__name__)
 CORS(app)
 
+# නැකත් 27 ක ලැයිස්තුව
+NAKSHATRAS = [
+    "Ashwini", "Bharani", "Krithika", "Rohini", "Mrigashira", "Arudra", 
+    "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", 
+    "Hastha", "Chitra", "Swathi", "Vishaka", "Anuradha", "Jyeshtha", 
+    "Moola", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", 
+    "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+]
+
 @app.route('/calculate', methods=['GET'])
 def calculate():
     try:
@@ -12,35 +21,34 @@ def calculate():
         m = int(request.args.get('month'))
         d = int(request.args.get('day'))
         h = int(request.args.get('hour'))
-        min_val = int(request.args.get('min'))
+        mi = int(request.args.get('min'))
         lat = float(request.args.get('lat'))
         lon = float(request.args.get('lon'))
 
-        # 1. නිවැරදි UTC Offset එක (GMT +5.5)
-        decimal_hour = h + (min_val / 60.0) - 5.5
-        jd_ut = swe.julday(y, m, d, decimal_hour)
-
-        # 2. Topocentric (උපන් ස්ථානයට අනුව) සැකසුම් - වඩාත් නිවැරදි වීමට
-        swe.set_topo(lon, lat, 0) 
-
-        # 3. Sidereal Mode එක Lahiri (True) ලෙස සැකසීම
+        # UTC Offset (GMT +5.5)
+        utc_hour = h + (mi / 60.0) - 5.5
+        jd_ut = swe.julday(y, m, d, utc_hour)
+        
         swe.set_sid_mode(swe.SIDM_LAHIRI)
-
-        # 4. ලග්නය ගණනය කිරීම (Ascendant)
-        # 64 = FLG_SIDEREAL, 256 = FLG_JPLEPH (NASA Data precision)
-        flags = swe.FLG_SIDEREAL
-        res, ascmc = swe.houses_ex(jd_ut, lat, lon, b'P', flags)
-
+        
+        # 1. ලග්නය ගණනය කිරීම (Ascendant)
+        res, ascmc = swe.houses_ex(jd_ut, lat, lon, b'O', 64)
         zodiac_signs = ["Mesha", "Vrushaba", "Mithuna", "Kataka", "Sinha", "Kanya", 
                         "Thula", "Vrushchika", "Dhanu", "Makara", "Kumbha", "Meena"]
+        lagnaya = zodiac_signs[int(ascmc[0] / 30)]
 
-        ascendant = ascmc[0]
-        lagnaya_index = int(ascendant / 30)
-        lagnaya = zodiac_signs[lagnaya_index]
-
+        # 2. නැකත ගණනය කිරීම (Moon's position)
+        # 1 යනු චන්ද්‍රයා (Moon) සඳහා වන අංකයයි
+        moon_pos, retire = swe.calc_ut(jd_ut, 1, 64)
+        moon_degree = moon_pos[0] # චන්ද්‍රයා සිටින අංශකය
+        
+        # නැකතක් අංශක 13.3333 කින් සමන්විත වේ (360 / 27)
+        nakshatra_index = int(moon_degree / (360 / 27))
+        nakshata = NAKSHATRAS[nakshatra_index]
+        
         return jsonify({
             "lagnaya": lagnaya,
-            "ascendant_degree": ascendant,
+            "nakshata": nakshata,
             "status": "success"
         })
     except Exception as e:
